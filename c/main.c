@@ -14,18 +14,20 @@
 #include "uart.h"
 #include "main.h"
 
-#ifndef __AVR_ATmega328P__
-    #define __AVR_ATmega328P__
-#endif
-
 #define UART_BAUD_RATE 9600
 #define Dev24C02 0xD0  // device address of EEPROM 24C02, see datasheet
 
-#define read_sensor(reg_H) ((imu_read(reg_H) << 8) | imu_read(reg_H))
+#define read_sensor(reg_H) ((imu_read(reg_H) << 8) | imu_read(reg_H + 1))
 
 /* init IMU function */
 void imu_init() {
-    imu_write(PWR_MGMT_1, 0x00);  // wake up imu from sleep mode
+    _delay_ms(150);
+
+    imu_write(SMPLRT_DIV, 0x07);
+    imu_write(PWR_MGMT_1, 0x01);
+    imu_write(CONFIG, 0x00);
+    imu_write(GYRO_CONFIG, 0x18);
+    imu_write(INT_ENABLE, 0x01);
 }
 
 /* read method */
