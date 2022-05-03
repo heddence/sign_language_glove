@@ -14,11 +14,6 @@
 #include "uart.h"
 #include "main.h"
 
-#define UART_BAUD_RATE 9600
-#define Dev24C02 0xD0  // device address of EEPROM 24C02, see datasheet
-
-#define read_sensor(reg_H) ((imu_read(reg_H) << 8) | imu_read(reg_H + 1))
-
 /* init IMU function */
 void imu_init() {
     _delay_ms(150);
@@ -65,6 +60,7 @@ void read_and_send_sensors() {
     int acc_gyro_sensors[16][6];
     unsigned int sensors_filtered[6];
     char msg[4 + 12 + 2];
+    char buffer[32];
 
     for (int i = 0; i < 16; i++) {
         imu_read_acc_gyro((int*) &acc_gyro_sensors[i]);
@@ -77,20 +73,18 @@ void read_and_send_sensors() {
         }
     }
 
-    // Test:
-    for (int i = 0; i < 16; i++) {
-        for (int j = 0; j < 6; j++) {
-            sprintf(msg, "%d\t", acc_gyro_sensors[i][j]);
-            uart_puts(msg);
-        }
-        uart_putc('\n');
+    prepare_msg(msg, sensors_filtered);
+
+    uart_puts("mpu data w/o header: ");
+    for (int i = 0; i < 4; i++) {
+        sprintf(buffer, "%x", msg[i] & 0xff);
+        uart_puts(buffer);
     }
-    uart_puts("------------------------------\n");
-    uart_puts("new data:\n");
-    // prepare_msg(msg, sensors_filtered);
-    // uart_puts("mpu6050 data: ");
-    // uart_puts(msg);
-    // uart_puts("\n");
+    for (int i = 4; i < 18; i++) {
+        sprintf(buffer, "%u", msg[i]);
+        uart_puts(buffer);
+    }
+    uart_putc('\n');
 }
 
 /* prepare message to send via UART */
@@ -116,14 +110,14 @@ void prepare_msg(char* msg, unsigned int* sensors) {
 }
 
 int main(void) {
-    uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
-    sei();
     i2c_init();
     imu_init();
-    _delay_ms(1000);
+    uart_init(UART_BAUD_SELECT(UART_BAUD_RATE, F_CPU));
+    sei();
+    _delay_ms(150);
 
     while (1) {
         read_and_send_sensors();
-        _delay_ms(1000);
+        _delay_ms(2000);
     }
 }
