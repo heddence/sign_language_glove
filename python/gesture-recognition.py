@@ -8,7 +8,7 @@ def read_and_populate(port, baud_rate):
     data = []
     ser = serial.Serial(port, baud_rate)
     for i in range(20):
-        port_data = ser.readline()
+        port_data = ser.readline().decode('utf-8').strip()
         data.append(port_data)
         print(port_data)
         time.sleep(2)
