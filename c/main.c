@@ -61,38 +61,62 @@ void imu_read_acc_gyro(int sensor_arr[6]) {
 
 /* initialize flex sensors */
 void init_flex_sensors() {
-    DDRB |= 0b00111110;                        // configure PORTB to an OUTPUT
-    PORTB |= 0b00111110;                       // turn LEDs ON
+    DDRD |= 0b11111000;                        // configure PORTB to an OUTPUT
+    PORTD |= 0b11111000;                       // turn LEDs ON
 
     DDRC = 0x00;                               // configure PORTC to an INPUT
-	ADMUX = (1 << ADLAR) | (1 << REFS0);       // select Vref = AVcc
-	ADCSRA = ((1 << ADEN) | (1 << ADSC)) + 7;  // enable ADC, start conversion and set prescaler to 128
+    /* ADMUX register description:
+     * =======================================
+     * REFS1 REFS0 ADLAR - MUX3 MUX2 MUX1 MUX0
+     * =======================================
+     * REFS1:0 - Reference Selection Bits (01 is for Vcc)
+     * ADLAR - ADC Left Adjust Result
+     * MUX3:0 - Analog Channel Selection Bits
+     */
+	ADMUX = (1 << REFS0) | (1 << ADLAR);       // select Vref = AVcc
+    /* ADCSRA register description:
+     * ===========================================
+     * ADEN ADSC ADATE ADIF ADIE ADPS2 ADPS1 ADPS0
+     * ===========================================
+     * ADEN - ADC Enable
+     * ADSC - ADC Start Conversion
+     * ADATE - ADC Auto Trigger Enable
+     * ADIF - ADC Interrupt Flag (whenever a conversion is finished, this bit is set to 1)
+     * ADIE - ADC Interrupt Enable
+     * ADPS2:0 - ADC Prescaler Select Bits (111 for division factor of 128)
+     */
+	ADCSRA = (1 << ADEN) | (1 << ADPS2) | (1 << ADPS1) | (1 << ADPS0);  // enable ADC and set prescaler to 128
+}
+
+/* read ADC value */
+uint16_t adc_read(uint8_t adc_port) {
+    adc_port &= 0b00000111;
+    ADMUX = (ADMUX & 0xF8) | adc_port;  // clear the last 3 bits of ADMUX register
+    ADCSRA |= (1 << ADSC);              // start single conversion
+    while(ADCSRA & (1 << ADSC));        // wait until the ADSC bit has been cleared
+    return ADC;
 }
 
 /* read flex sensors values */
-void read_flex_sensors(int* array) {
+void read_flex_sensors(uint16_t* array) {
     for (int i = 0; i < 5; i++) {
-        while (ADCSRA & (1 << ADSC));                       // wait until the ADSC bit has been cleared
-        array[i] = ADCH;
         if (i == 4)
-            ADMUX = (1 << ADLAR) | (1 << REFS0);            // select Vref = AVcc
-		else
-            ADMUX = ((1 << ADLAR) | (1 << REFS0)) + i + 1;  // move to the next port 
-		ADCSRA |= (1 << ADSC);                              // start conversion
+            array[i] = adc_read(i + 2);  // skip SCL and SDA ports
+        array[i] = adc_read(i);
     }
 }
 
 /* read values from sensors */
 void read_and_send_sensors() {
     int acc_gyro_sensors[16][6];        // array of accelerometer/gyroscope values
-    unsigned int flex_sensors[16][5];   // array of flex sensors values
+    uint16_t flex_sensors[16][5];       // array of flex sensors values
     unsigned int sensors_filtered[13];  // array of filtered values
     char msg[4 + 22 + 2];               // final packet to send
     char buffer[32];                    // buffer array for UART
 
     for (int i = 0; i < 16; i++) {
         imu_read_acc_gyro((int*) &acc_gyro_sensors[i]);  // read data from acc/gyro and write it to array
-        read_flex_sensors((int*) &flex_sensors[i]);      // read data from flex sensors and write it to array
+        read_flex_sensors((uint16_t*) &flex_sensors[i]);      // read data from flex sensors and write it to array
     }
 
     for (int i = 0; i < 6; i++) {
@@ -119,7 +143,7 @@ void read_and_send_sensors() {
         }
         uart_putc('\n');
     }
-    uart_puts("================================================================");
+    uart_puts("==============================================================================\n");
 
     /* UNCOMMENT THIS WHEN TEST COMPLETE
     prepare_msg(msg, sensors_filtered);
