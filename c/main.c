@@ -61,10 +61,10 @@ void imu_read_acc_gyro(int sensor_arr[6]) {
 
 /* initialize flex sensors */
 void init_flex_sensors() {
-    DDRD |= 0b11111000;                        // configure PORTB to an OUTPUT
-    PORTD |= 0b11111000;                       // turn LEDs ON
+    DDRD |= 0b11111000;                                                 // configure PORTB to an OUTPUT
+    PORTD |= 0b11111000;                                                // turn LEDs ON
 
-    DDRC = 0x00;                               // configure PORTC to an INPUT
+    DDRC = 0x00;                                                        // configure PORTC to an INPUT
     /* ADMUX register description:
      * =======================================
      * REFS1 REFS0 ADLAR - MUX3 MUX2 MUX1 MUX0
@@ -73,7 +73,7 @@ void init_flex_sensors() {
      * ADLAR - ADC Left Adjust Result
      * MUX3:0 - Analog Channel Selection Bits
      */
-	ADMUX = (1 << REFS0) | (1 << ADLAR);       // select Vref = AVcc
+	ADMUX = (1 << REFS0) | (1 << ADLAR);                                // select Vref = AVcc
     /* ADCSRA register description:
      * ===========================================
      * ADEN ADSC ADATE ADIF ADIE ADPS2 ADPS1 ADPS0
@@ -133,6 +133,7 @@ void read_and_send_sensors() {
         }
     }
 
+    /* TEST PART
     for (int i = 0; i < 5; i++) {
         sprintf(buffer, "%d:\t", i + 1);
         uart_puts(buffer);
@@ -144,8 +145,8 @@ void read_and_send_sensors() {
         uart_putc('\n');
     }
     uart_puts("==============================================================================\n");
+    */
 
-    /* UNCOMMENT THIS WHEN TEST COMPLETE
     prepare_msg(msg, sensors_filtered);
 
     for (int i = 0; i < 4; i++) {
@@ -157,7 +158,6 @@ void read_and_send_sensors() {
         uart_puts(buffer);                     // sends buffer via UART
     }
     uart_putc('\n');
-    */
 }
 
 /* prepare message to send via UART */
