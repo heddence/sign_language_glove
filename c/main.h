@@ -7,7 +7,8 @@ void imu_init();                               // init IMU function
 unsigned char imu_read(unsigned char);         // read method
 void imu_write(unsigned char, unsigned char);  // write method
 void init_flex_sensors();                      // initialize flex sensors
-void read_flex_sensors(uint16_t*);             // read flex sensors values
+void read_flex_sensors(int*);                  // read flex sensors values
 void imu_read_acc_gyro(int*);                  // read accel and gyro registers of IMU
 void read_and_send_sensors();                  // read values from sensors
-void prepare_msg(char*, unsigned int*);        // prepare message to send via UART
+void prepare_and_send(char*, int*);            // prepare message and send via UART
+uint8_t adc_read(uint8_t);                     // read ADC value

@@ -61,8 +61,8 @@ void imu_read_acc_gyro(int sensor_arr[6]) {
 
 /* initialize flex sensors */
 void init_flex_sensors() {
-    DDRD |= 0b11111000;                                                 // configure PORTB to an OUTPUT
-    PORTD |= 0b11111000;                                                // turn LEDs ON
+    DDRD |= 0b11111111;                                                 // configure PORTB to an OUTPUT
+    PORTD |= 0b11111111;                                                // turn LEDs ON
 
     DDRC = 0x00;                                                        // configure PORTC to an INPUT
     /* ADMUX register description:
@@ -89,16 +89,16 @@ void init_flex_sensors() {
 }
 
 /* read ADC value */
-uint16_t adc_read(uint8_t adc_port) {
+uint8_t adc_read(uint8_t adc_port) {
     adc_port &= 0b00000111;
     ADMUX = (ADMUX & 0xF8) | adc_port;  // clear the last 3 bits of ADMUX register
     ADCSRA |= (1 << ADSC);              // start single conversion
     while(ADCSRA & (1 << ADSC));        // wait until the ADSC bit has been cleared
-    return ADC;
+    return ADCH;
 }
 
 /* read flex sensors values */
-void read_flex_sensors(uint16_t* array) {
+void read_flex_sensors(int* array) {
     for (int i = 0; i < 5; i++) {
         if (i == 4)
             array[i] = adc_read(i + 2);  // skip SCL and SDA ports
@@ -108,79 +108,60 @@ void read_flex_sensors(uint16_t* array) {
 
 /* read values from sensors */
 void read_and_send_sensors() {
-    int acc_gyro_sensors[16][6];        // array of accelerometer/gyroscope values
-    uint16_t flex_sensors[16][5];       // array of flex sensors values
-    unsigned int sensors_filtered[13];  // array of filtered values
-    char msg[4 + 22 + 2];               // final packet to send
-    char buffer[32];                    // buffer array for UART
+    int acc_gyro_sensors[16][6];  // array of accelerometer/gyroscope values
+    int flex_sensors[16][5];      // array of flex sensors values
+
+    int sensors_filtered[11];     // array of filtered values
+
+    // char msg[4 + 23];             // final packet to send
+    char buffer[32];              // buffer array for UART
 
     for (int i = 0; i < 16; i++) {
         imu_read_acc_gyro((int*) &acc_gyro_sensors[i]);  // read data from acc/gyro and write it to array
-        read_flex_sensors((uint16_t*) &flex_sensors[i]);      // read data from flex sensors and write it to array
+        read_flex_sensors((int*) &flex_sensors[i]);      // read data from flex sensors and write it to array
     }
 
     for (int i = 0; i < 6; i++) {
-        sensors_filtered[i] = 0;
+        int sum = 0;
         for (int j = 0; j < 16; j++) {
-            sensors_filtered[i] += acc_gyro_sensors[j][i] >> 8;  // sum all 16 reads from acc/gyro and shift values by 8 bits
+            sum += acc_gyro_sensors[j][i];  // compute sum of all 16 readings
         }
+        sensors_filtered[i] = sum / 16;     // find average values of 16 readings
     }
 
     for (int i = 0; i < 5; i++) {
-        sensors_filtered[6 + i] = 0;
+        int sum = 0;
         for (int j = 0; j < 16; j++) {
-            sensors_filtered[6 + i] += flex_sensors[j][i];  // sum all 16 reads from flex sensors
+            sum += flex_sensors[j][i];       // compute sum of all 16 readings
         }
+        sensors_filtered[i + 6] = sum / 16;  // find average value of 16 readings
     }
 
-    /* TEST PART
-    for (int i = 0; i < 5; i++) {
-        sprintf(buffer, "%d:\t", i + 1);
-        uart_puts(buffer);
-        for (int j = 0; j < 16; j++) {
-            sprintf(buffer, "%u", flex_sensors[j][i]);
-            uart_puts(buffer);
-            uart_putc('\t');
-        }
-        uart_putc('\n');
-    }
-    uart_puts("==============================================================================\n");
-    */
-
-    prepare_msg(msg, sensors_filtered);
-
-    for (int i = 0; i < 4; i++) {
-        sprintf(buffer, "%x", msg[i] & 0xff);  // sends header output with mask to buffer
-        uart_puts(buffer);                     // sends buffer via UART
-    }
-    for (int i = 4; i < 24; i++) {
-        sprintf(buffer, "%u", msg[i]);         // sends data output to buffer
-        uart_puts(buffer);                     // sends buffer via UART
-    }
-    uart_putc('\n');
+    prepare_and_send(buffer, sensors_filtered);
 }
 
-/* prepare message to send via UART */
-void prepare_msg(char* msg, unsigned int* sensors) {
-    /* header part */
-    msg[0] = 0xA1;
-	msg[1] = 0xB2;
-	msg[2] = 0xC3;
-	msg[3] = 0xD4;
+/* prepare message and send via UART */
+void prepare_and_send(char* buffer, int* sensors) {
+    char header[4] = {0xA1, 0xB2, 0xC3, 0xD4};
+    for (int i = 0; i < 4; i++) {
+        sprintf(buffer, "%x", header[i] & 0xFF);  // sends header output with mask to buffer
+        uart_puts(buffer);                        // sends buffer via UART
+    }
 
-    /* data part */
     for (int i = 0; i < 11; i++) {
-        msg[2 * i + 4] = sensors[i];       // take value from sensors array and write it to msg array
-        msg[2 * i + 5] = sensors[i] >> 8;  // take value from sensors array, shift it by 8 bits and write it to msg array
+        sprintf(buffer, "%d", sensors[i]);  // sends sensors data to buffer
+        uart_puts(buffer);                  // sends buffer via UART
+        uart_putc(',');                     // sends comma to separate values
     }
 
-    /* checksum part */
     unsigned int sum = 0;
-    for (int i = 0; i < 22; i++) {
-        sum += msg[4 + i];       // compute checksum by adding all values from data part of msg array
+    for (int i = 0; i < 11; i++) {
+        sum += sensors[i];       // compute checksum by adding all values from data part of msg array
     }
-    msg[4 + 22] = sum;           // write checksum value to msg array
-    msg[4 + 22 + 1] = sum >> 8;  // shift checksum value by 8 bits and write it to msg array
+    sprintf(buffer, "%u", sum);  // sends checksum to buffer
+    uart_puts(buffer);           // write checksum value to msg array
+
+    uart_putc('\n');
 }
 
 int main(void) {
@@ -193,6 +174,6 @@ int main(void) {
 
     while (1) {
         read_and_send_sensors();
-        _delay_ms(2000);
+        _delay_ms(3000);
     }
 }
