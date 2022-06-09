@@ -18,15 +18,14 @@
 #include "uart.h"
 #include "main.h"
 
+#define read_sensor(reg_H) ((imu_read(reg_H) << 8) | imu_read(reg_H + 1))
+
 /* init IMU function */
 void imu_init() {
     _delay_ms(150);
 
-    imu_write(SMPLRT_DIV, 0x07);
-    imu_write(PWR_MGMT_1, 0x01);
-    imu_write(CONFIG, 0x00);
-    imu_write(GYRO_CONFIG, 0x18);
-    imu_write(INT_ENABLE, 0x01);
+    imu_write(SMPLRT_DIV, 0b00000111);
+    imu_write(PWR_MGMT_1, 0b00000001);
 }
 
 /* read method */
@@ -112,21 +111,29 @@ void read_and_send_sensors() {
     int flex_sensors[16][5];      // array of flex sensors values
 
     int sensors_filtered[11];     // array of filtered values
-
-    // char msg[4 + 23];             // final packet to send
     char buffer[32];              // buffer array for UART
 
     for (int i = 0; i < 16; i++) {
         imu_read_acc_gyro((int*) &acc_gyro_sensors[i]);  // read data from acc/gyro and write it to array
         read_flex_sensors((int*) &flex_sensors[i]);      // read data from flex sensors and write it to array
     }
+    
+    /*
+    uart_puts("ACC_GYRO:\n");
+    for (int i = 0; i < 6; i++) {
+        sprintf(buffer, "%d: ", i);
+        uart_puts(buffer);
+        for (int j = 0; j < 16; j++) {
+            sprintf(buffer, "%d\t", acc_gyro_sensors[j][i]);
+            uart_puts(buffer);
+        }
+        uart_putc('\n');
+    }
+    uart_puts("+===========================================================+\n");
+    */
 
     for (int i = 0; i < 6; i++) {
-        int sum = 0;
-        for (int j = 0; j < 16; j++) {
-            sum += acc_gyro_sensors[j][i];  // compute sum of all 16 readings
-        }
-        sensors_filtered[i] = sum / 16;     // find average values of 16 readings
+        sensors_filtered[i] = acc_gyro_sensors[8][i];     // find average values of 16 readings
     }
 
     for (int i = 0; i < 5; i++) {
@@ -142,11 +149,13 @@ void read_and_send_sensors() {
 
 /* prepare message and send via UART */
 void prepare_and_send(char* buffer, int* sensors) {
+    /*
     char header[4] = {0xA1, 0xB2, 0xC3, 0xD4};
     for (int i = 0; i < 4; i++) {
         sprintf(buffer, "%x", header[i] & 0xFF);  // sends header output with mask to buffer
         uart_puts(buffer);                        // sends buffer via UART
     }
+    */
 
     for (int i = 0; i < 11; i++) {
         sprintf(buffer, "%d", sensors[i]);  // sends sensors data to buffer
@@ -174,6 +183,6 @@ int main(void) {
 
     while (1) {
         read_and_send_sensors();
-        _delay_ms(3000);
+        _delay_ms(400);
     }
 }

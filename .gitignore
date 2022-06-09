@@ -1,3 +1,5 @@
 .vscode/
 latex/
 python/dataset/good-bad.csv
+python/__pycache__/
+python/.idea

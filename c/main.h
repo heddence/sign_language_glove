@@ -1,8 +1,6 @@
 #define UART_BAUD_RATE 9600
 #define Dev24C02 0xD0  // device address of EEPROM 24C02, see datasheet
 
-#define read_sensor(reg_H) ((imu_read(reg_H) << 8) | imu_read(reg_H + 1))
-
 void imu_init();                               // init IMU function
 unsigned char imu_read(unsigned char);         // read method
 void imu_write(unsigned char, unsigned char);  // write method
