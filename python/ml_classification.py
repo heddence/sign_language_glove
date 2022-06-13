@@ -8,13 +8,12 @@ from sklearn.model_selection import train_test_split
 
 # Classifiers
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.naive_bayes import GaussianNB, BernoulliNB
-from sklearn.linear_model import LogisticRegression, SGDClassifier
-from sklearn.svm import SVC, LinearSVC, NuSVC
+from sklearn.naive_bayes import GaussianNB
+from sklearn.svm import SVC, LinearSVC
 
 # Metrics
-from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
+from sklearn.metrics import accuracy_score
 from sklearn.metrics import recall_score
 from sklearn.metrics import precision_score
 from sklearn.metrics import f1_score
@@ -112,36 +111,17 @@ if __name__ == '__main__':
     y2_KNN_model = KNN.predict(x2)
     print(f"KNN Accuracy : {accuracy_score(y2, y2_KNN_model):.4f}")
 
-    BNB = BernoulliNB()
-    BNB.fit(x1, y1)
-    y2_BNB_model = BNB.predict(x2)
-    print(f"BNB Accuracy : {accuracy_score(y2, y2_BNB_model):.4f}")
-
-    LR = LogisticRegression()
-    LR.fit(x1, y1)
-    y2_LR_model = LR.predict(x2)
-    print(f"LR Accuracy : {accuracy_score(y2, y2_LR_model):.4f}")
-
-    SDG = SGDClassifier()
-    SDG.fit(x1, y1)
-    y2_SDG_model = SDG.predict(x2)
-    print(f"SDG Accuracy : {accuracy_score(y2, y2_SDG_model):.4f}")
-
     SVC = SVC()
     SVC.fit(x1, y1)
     y2_SVC_model = SVC.predict(x2)
     print(f"SVC Accuracy : {accuracy_score(y2, y2_SVC_model):.4f}")
 
-    NSVC = NuSVC()
-    NSVC.fit(x1, y1)
-    y2_NSVC_model = NSVC.predict(x2)
-    print(f"NSVC Accuracy : {accuracy_score(y2, y2_NSVC_model):.4f}")
-
     # Plot confusion matrix
     cf_matrix = confusion_matrix(y2, y2_LSVC_model)
     plt.figure(figsize=(17 * cm, 12 * cm), dpi=150)
     htm = sns.heatmap(cf_matrix, annot=True, cmap='Blues', fmt='g',
-                      xticklabels=list(predictions.values()), yticklabels=list(predictions.values()))
+                      xticklabels=['Плохо', 'Хорошо', 'Расслаб.'],
+                      yticklabels=['Плохо', 'Хорошо', 'Расслаб.'])
     htm.set_title('Матрица ошибок', fontsize=20, y=1.03)  # Set title of figure
 
     htm.set_ylabel('Настоящие значения')
