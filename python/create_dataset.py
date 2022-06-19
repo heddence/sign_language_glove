@@ -3,6 +3,7 @@ import time
 import os.path
 from serial import Serial
 
+"""
 file_exists = os.path.isfile('dataset/good-bad.csv')
 if not file_exists:
     file = open('dataset/good-bad.csv', mode='w')
@@ -12,6 +13,7 @@ if not file_exists:
     df.to_csv(file, index=False)
     file.close()
     print('File created successfully!')
+"""
 
 target = input('Enter symbol to record: ')
 data = []

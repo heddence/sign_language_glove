@@ -46,13 +46,14 @@ print(x1.shape, x2.shape)
 print(y1.shape, y2.shape)
 
 # LSVC Classifier
-LSVC = LinearSVC()
+LSVC = LinearSVC(max_iter=2000)
 LSVC.fit(x1, y1)
 y2_LSVC_model = LSVC.predict(x2)
 print(f'LSVC Accuracy : {accuracy_score(y2, y2_LSVC_model):.4f}')
 print(f'LSVC Recall : {recall_score(y2, y2_LSVC_model, average="micro"):.4f}')
 print(f'LSVC Precision : {precision_score(y2, y2_LSVC_model, average="micro"):.4f}')
 print(f'LSVC f1-score : {f1_score(y2, y2_LSVC_model, average="micro"):.4f}')
+
 
 if __name__ == '__main__':
     # Plots
@@ -67,8 +68,8 @@ if __name__ == '__main__':
     scatter = sns.scatterplot(ax=ax1, y='target', x='values', hue='ACCEL_OUT_H', data=dfm, s=100)
     scatter.set_title('Данные аксселерометра (классы)', fontsize=20, y=1.03)  # Set title of figure
 
-    ax1.yaxis.set_ticks([0, 1, 2])
-    ax1.yaxis.set_ticklabels(['Плохо', 'Хорошо', 'Расслаб.'], rotation=45)
+    ax1.yaxis.set_ticks([0, 1, 2, 3, 4, 5, 6, 7])
+    ax1.yaxis.set_ticklabels(['A', 'B', 'H', 'I', 'ОК', 'Плохо', 'Хорошо', 'Расслаб.'], rotation=45)
     ax1.set_ylabel(None)
     ax1.set_xlabel(None)
     h, _ = ax1.get_legend_handles_labels()
@@ -76,7 +77,7 @@ if __name__ == '__main__':
     plt.savefig('figs/accel-scatter.png')
 
     # Accelerometer's data plot (time)
-    time_array = np.arange(0, 1500, 1)
+    time_array = np.arange(0, 4000, 1)
     y1_acc = df.iloc[:, 0]
     y2_acc = df.iloc[:, 1]
     y3_acc = df.iloc[:, 2]
@@ -87,7 +88,7 @@ if __name__ == '__main__':
     lp2 = sns.lineplot(x=time_array, y=y2_acc, ax=axs2[1])
     lp3 = sns.lineplot(x=time_array, y=y3_acc, ax=axs2[2])
 
-    axs2[0].xaxis.set_ticks(np.arange(0, 1501, 500))
+    axs2[0].xaxis.set_ticks(np.arange(0, 4001, 500))
     axs2[0].yaxis.set_label_position('right')
     axs2[1].yaxis.set_label_position('right')
     axs2[2].yaxis.set_label_position('right')
@@ -111,21 +112,16 @@ if __name__ == '__main__':
     y2_KNN_model = KNN.predict(x2)
     print(f"KNN Accuracy : {accuracy_score(y2, y2_KNN_model):.4f}")
 
-    SVC = SVC()
-    SVC.fit(x1, y1)
-    y2_SVC_model = SVC.predict(x2)
-    print(f"SVC Accuracy : {accuracy_score(y2, y2_SVC_model):.4f}")
-
     # Plot confusion matrix
     cf_matrix = confusion_matrix(y2, y2_LSVC_model)
-    plt.figure(figsize=(17 * cm, 12 * cm), dpi=150)
+    plt.figure(figsize=(17 * cm, 13 * cm), dpi=150)
     htm = sns.heatmap(cf_matrix, annot=True, cmap='Blues', fmt='g',
-                      xticklabels=['Плохо', 'Хорошо', 'Расслаб.'],
-                      yticklabels=['Плохо', 'Хорошо', 'Расслаб.'])
-    htm.set_title('Матрица ошибок', fontsize=20, y=1.03)  # Set title of figure
+                      yticklabels=['A', 'B', 'H', 'I', 'ОК', 'Плохо', 'Хорошо', 'Расслаб.'])
+    htm.set_title('Матрица ошибок', fontsize=20, y=1.02)  # Set title of figure
 
     htm.set_ylabel('Настоящие значения')
     htm.set_xlabel('Предсказанные значения')
+    htm.set_xticklabels(labels=['A', 'B', 'H', 'I', 'ОК', 'Плохо', 'Хорошо', 'Расслаб.'], rotation=25)
     htm.yaxis.labelpad = 15
     plt.savefig('figs/confusion-matrix.png')
 
