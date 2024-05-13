@@ -1,3 +1,5 @@
 .vscode/
 latex/
 python/__pycache__
+python/venv
+.idea

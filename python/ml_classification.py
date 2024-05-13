@@ -9,7 +9,7 @@ from sklearn.model_selection import train_test_split
 # Classifiers
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.naive_bayes import GaussianNB
-from sklearn.svm import SVC, LinearSVC
+from sklearn.svm import LinearSVC
 
 # Metrics
 from sklearn.metrics import confusion_matrix
@@ -66,10 +66,10 @@ if __name__ == '__main__':
 
     fig1, ax1 = plt.subplots(figsize=(17 * cm, 9 * cm), dpi=150)
     scatter = sns.scatterplot(ax=ax1, y='target', x='values', hue='ACCEL_OUT_H', data=dfm, s=100)
-    scatter.set_title('Данные аксселерометра (классы)', fontsize=20, y=1.03)  # Set title of figure
+    scatter.set_title('Accelerometer data (classes)', fontsize=20, y=1.03)  # Set title of figure
 
     ax1.yaxis.set_ticks([0, 1, 2, 3, 4, 5, 6, 7])
-    ax1.yaxis.set_ticklabels(['A', 'B', 'H', 'I', 'ОК', 'Плохо', 'Хорошо', 'Расслаб.'], rotation=45)
+    ax1.yaxis.set_ticklabels(['A', 'B', 'H', 'I', 'OK', 'Bad', 'Good', 'Relaxed'], rotation=45)
     ax1.set_ylabel(None)
     ax1.set_xlabel(None)
     h, _ = ax1.get_legend_handles_labels()
@@ -83,7 +83,7 @@ if __name__ == '__main__':
     y3_acc = df.iloc[:, 2]
 
     fig2, axs2 = plt.subplots(3, 1, figsize=(17 * cm, 9 * cm), dpi=150, sharex=True)
-    fig2.suptitle('Данные аксселерометра (время)', fontsize=15, y=0.97)
+    fig2.suptitle('Accelerometer data (time)', fontsize=15, y=0.97)
     lp1 = sns.lineplot(x=time_array, y=y1_acc, ax=axs2[0])
     lp2 = sns.lineplot(x=time_array, y=y2_acc, ax=axs2[1])
     lp3 = sns.lineplot(x=time_array, y=y3_acc, ax=axs2[2])
@@ -116,12 +116,12 @@ if __name__ == '__main__':
     cf_matrix = confusion_matrix(y2, y2_LSVC_model)
     plt.figure(figsize=(17 * cm, 13 * cm), dpi=150)
     htm = sns.heatmap(cf_matrix, annot=True, cmap='Blues', fmt='g',
-                      yticklabels=['A', 'B', 'H', 'I', 'ОК', 'Плохо', 'Хорошо', 'Расслаб.'])
-    htm.set_title('Матрица ошибок', fontsize=20, y=1.02)  # Set title of figure
+                      yticklabels=['A', 'B', 'H', 'I', 'OK', 'Bad', 'Good', 'Relaxed'])
+    htm.set_title('Confusion matrix', fontsize=20, y=1.02)  # Set title of figure
 
-    htm.set_ylabel('Настоящие значения')
-    htm.set_xlabel('Предсказанные значения')
-    htm.set_xticklabels(labels=['A', 'B', 'H', 'I', 'ОК', 'Плохо', 'Хорошо', 'Расслаб.'], rotation=25)
+    htm.set_ylabel('True values')
+    htm.set_xlabel('Predicted values')
+    htm.set_xticklabels(labels=['A', 'B', 'H', 'I', 'OK', 'Bad', 'Good', 'Relaxed'], rotation=25)
     htm.yaxis.labelpad = 15
     plt.savefig('figs/confusion-matrix.png')
 
